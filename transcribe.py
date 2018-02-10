@@ -12,11 +12,11 @@ import time
 
 DEFAULT_SAMPLE_RATE = 44100
 DEMO_FILE = 'output.wav'
-VIDEO_DEMO_FILE = 'Rick Astley - Never Gonna Give You Up.mp4'
+VIDEO_DEMO_FILE = '''Trump_ 'We will build a wall'.mp4'''
 LINE = ''.join(['\n', ('-' * 20), '\n'])
 
-TEST_TRANSCRIBE = True
-TEST_CONVERSION = True
+TEST_TRANSCRIBE = False
+TEST_CONVERSION = False
 
 class FFMPEG_Error(Exception):
     pass
@@ -124,6 +124,29 @@ def convert_video_to_wav_file(video_file, output_file_name=None):
 
     return output_file_name
 
+def convert_audio_to_wav_file(audio_file, output_file_name=None):
+    import subprocess
+
+    if not os.path.isfile(audio_file):
+        raise OSError('The audio file "%s" could not be found.')
+    if output_file_name is None:
+        output_file_name = audio_file
+
+    suffix = '0'
+    original_output_file_name = output_file_name
+
+    while os.path.isfile(output_file_name):
+        base, ext = os.path.splitext(original_output_file_name)
+        suffix = str(int(suffix)+1)
+        output_file_name = ''.join([base, suffix, '.wav'])
+
+    return_code = subprocess.call('ffmpeg -i "%s" -vn -acodec pcm_u8 -ar 44100 -ac 1 "%s"' % (audio_file, output_file_name), shell=True)
+
+    if return_code != 0:
+        raise FFMPEG_Error('[ffmpeg] Could not convert "%s" to a mono .wav file!' % (audio_file,))
+
+    return output_file_name
+
 if __name__ == '__main__':
     if TEST_TRANSCRIBE and not TEST_CONVERSION:
         transcriber = Transcribe()
@@ -135,3 +158,5 @@ if __name__ == '__main__':
         transcriber = Transcribe()
         transcript, confidence = transcriber.transcribe(convert_video_to_wav_file(VIDEO_DEMO_FILE))
         print('Transcript:', LINE, transcript, LINE, 'This transcription was made with an average of %.2f confidence' % (confidence,))
+    
+    convert_audio_to_wav_file('y2mate.com - trump_we_will_build_a_wall_1e_7hZOdsxo.mp3')
